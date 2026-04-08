@@ -378,12 +378,14 @@ export async function updateSettingsRecord(input: {
   defaultWorkStartTime: string;
   defaultWorkEndTime: string;
 }) {
+  const { userId, ...settingsData } = input;
+
   await prisma.user.update({
-    where: { id: input.userId },
-    data: input
+    where: { id: userId },
+    data: settingsData
   });
 
-  return runReschedule(input.userId, ScheduleTriggerType.MANUAL_RESCHEDULE);
+  return runReschedule(userId, ScheduleTriggerType.MANUAL_RESCHEDULE);
 }
 
 export async function createContinuationTask(input: {
