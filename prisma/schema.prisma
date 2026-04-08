@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  SCHEDULED
+  IN_PROGRESS
+  DONE
+  AT_RISK
+  ARCHIVED
+}
+
+enum SessionStatus {
+  PLANNED
+  DONE
+  SKIPPED
+}
+
+enum ScheduleTriggerType {
+  TASK_CREATED
+  TASK_UPDATED
+  BLOCKED_TIME_ADDED
+  BLOCKED_TIME_UPDATED
+  BLOCKED_TIME_DELETED
+  OVERRUN_REPORTED
+  MANUAL_RESCHEDULE
+  TASK_COMPLETED
+}
+
+model User {
+  id                   String        @id @default(cuid())
+  name                 String
+  timezone             String        @default("America/New_York")
+  defaultWorkDays      Int[]
+  defaultWorkStartTime String
+  defaultWorkEndTime   String
+  categories           Category[]
+  tasks                Task[]
+  blockedTimes         BlockedTime[]
+  scheduleRuns         ScheduleRun[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String
+  tasks     Task[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+}
+
+model Task {
+  id                 String            @id @default(cuid())
+  userId             String
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId         String
+  category           Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name               String
+  doDate             DateTime
+  dueDate            DateTime
+  dueTime            String?
+  estimatedMinutes   Int
+  status             TaskStatus        @default(SCHEDULED)
+  parentTaskId       String?
+  parentTask         Task?             @relation("TaskContinuations", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  continuations      Task[]            @relation("TaskContinuations")
+  createdFromOverrun Boolean           @default(false)
+  completedAt        DateTime?
+  archivedAt         DateTime?
+  sessions           ScheduledSession[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model ScheduledSession {
+  id             String        @id @default(cuid())
+  taskId         String
+  task           Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  startAt        DateTime
+  endAt          DateTime
+  plannedMinutes Int
+  status         SessionStatus @default(PLANNED)
+  actualMinutes  Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model BlockedTime {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String?
+  startAt   DateTime
+  endAt     DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ScheduleRun {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  triggerType   ScheduleTriggerType
+  startedAt     DateTime            @default(now())
+  finishedAt    DateTime?
+  resultSummary String
+  createdAt     DateTime            @default(now())
+}
