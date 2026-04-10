@@ -75,14 +75,18 @@ export default async function Page() {
                 <p className="mt-1">Choose the days and hours when FlexPlan is allowed to schedule.</p>
               </div>
               <div className="summary-card">
-                <p className="font-medium text-[#54483f]">2. Add tasks and categories</p>
+                <p className="font-medium text-[#54483f]">2. Add tasks</p>
                 <p className="mt-1">
-                  Pick one of the starter categories for now. The current MVP uses seeded categories instead of a separate category setup flow.
+                  Fill in the task form on the right. Categories are just color labels to help you organize your tasks.
                 </p>
               </div>
               <div className="summary-card">
-                <p className="font-medium text-[#54483f]">3. Review the schedule</p>
-                <p className="mt-1">Use the right page to see what is planned today and across the week.</p>
+                <p className="font-medium text-[#54483f]">3. Remove sample items</p>
+                <p className="mt-1">Open a sample task from the task list and press Archive if you want to clear it out.</p>
+              </div>
+              <div className="summary-card">
+                <p className="font-medium text-[#54483f]">4. Review the schedule</p>
+                <p className="mt-1">Use the calendar on the right to see what is planned today and across the week.</p>
               </div>
             </div>
           </div>
