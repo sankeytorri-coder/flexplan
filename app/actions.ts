@@ -17,6 +17,7 @@ import {
   updateTaskRecord
 } from "@/lib/data";
 import { sanitizeString } from "@/lib/utils";
+import { parseClock } from "@/lib/time";
 import { ScheduleTriggerType } from "@prisma/client";
 
 function parseDate(value: string) {
@@ -31,6 +32,25 @@ function parseEstimatedMinutes(formData: FormData) {
   const hours = Number(formData.get("estimatedHours") ?? 0);
   const minutes = Number(formData.get("estimatedMinutes") ?? 0);
   return hours * 60 + minutes;
+}
+
+function normalizeWorkEndTime(startTime: string, endTime: string) {
+  const start = parseClock(startTime);
+  const end = parseClock(endTime);
+  const startTotal = start.hours * 60 + start.minutes;
+  const endTotal = end.hours * 60 + end.minutes;
+
+  if (endTotal > startTotal) {
+    return endTime;
+  }
+
+  // Common user mistake: entering 5:00 PM as 05:00 in a 24-hour input.
+  if (start.hours >= 6 && start.hours <= 12 && end.hours <= 6) {
+    const normalizedHours = end.hours + 12;
+    return `${String(normalizedHours).padStart(2, "0")}:${String(end.minutes).padStart(2, "0")}`;
+  }
+
+  return endTime;
 }
 
 export async function saveTaskAction(formData: FormData) {
@@ -134,10 +154,12 @@ export async function deleteBlockedTimeAction(formData: FormData) {
 export async function updateSettingsAction(formData: FormData) {
   const dashboard = await getDashboardData();
   const timezone = sanitizeString(formData.get("timezone")) || dashboard.timezone;
-  const defaultWorkStartTime =
+  const requestedStartTime =
     sanitizeString(formData.get("defaultWorkStartTime")) || dashboard.defaultWorkStartTime;
-  const defaultWorkEndTime =
+  const requestedEndTime =
     sanitizeString(formData.get("defaultWorkEndTime")) || dashboard.defaultWorkEndTime;
+  const defaultWorkStartTime = requestedStartTime;
+  const defaultWorkEndTime = normalizeWorkEndTime(requestedStartTime, requestedEndTime);
   const defaultWorkDays = formData
     .getAll("defaultWorkDays")
     .map((item) => Number(item))

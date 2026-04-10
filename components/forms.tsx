@@ -41,7 +41,9 @@ export function SettingsForm({
         <div>
           <p className="section-kicker">Planner Setup</p>
           <h2 className="panel-title">Working Hours</h2>
-          <p className="mt-1 text-sm text-ink/65">Scheduling only happens inside these days and time windows.</p>
+          <p className="mt-1 text-sm text-ink/65">
+            Scheduling only happens inside these days and time windows. Use 24-hour time, like `17:00` for 5 PM.
+          </p>
         </div>
         <SubmitButton className="button-primary" pendingLabel="Saving...">
           Save settings
