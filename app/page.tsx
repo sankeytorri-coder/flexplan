@@ -53,17 +53,15 @@ export default async function Page() {
       meta: "Blocked time"
     }))
   ];
-  const currentWeekStart = new Date(today);
-  currentWeekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-  currentWeekStart.setHours(0, 0, 0, 0);
-  const currentWeekEnd = new Date(currentWeekStart);
-  currentWeekEnd.setDate(currentWeekStart.getDate() + 7);
-  const hasItemsThisWeek = calendarItems.some(
-    (item) => item.startAt >= currentWeekStart && item.startAt < currentWeekEnd
-  );
-  const fallbackAnchorDate = hasItemsThisWeek
-    ? today
-    : [...calendarItems].sort((left, right) => left.startAt.getTime() - right.startAt.getTime())[0]?.startAt ?? today;
+  const startOfToday = new Date(today);
+  startOfToday.setHours(0, 0, 0, 0);
+  const upcomingScheduledItem = [...calendarItems]
+    .filter((item) => item.kind === "task" && item.startAt >= startOfToday)
+    .sort((left, right) => left.startAt.getTime() - right.startAt.getTime())[0];
+  const fallbackAnchorDate =
+    upcomingScheduledItem?.startAt ??
+    [...calendarItems].sort((left, right) => left.startAt.getTime() - right.startAt.getTime())[0]?.startAt ??
+    today;
 
   return (
     <DashboardShell
