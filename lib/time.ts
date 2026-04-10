@@ -87,3 +87,29 @@ export function nextWorkingDayFrom(date: Date, workDays: number[]) {
 
   return startOfDay(date);
 }
+
+export function getZonedNow(timezone: string, source = new Date()) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(source);
+  const getPart = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
+
+  return new Date(
+    getPart("year"),
+    getPart("month") - 1,
+    getPart("day"),
+    getPart("hour"),
+    getPart("minute"),
+    getPart("second"),
+    0
+  );
+}

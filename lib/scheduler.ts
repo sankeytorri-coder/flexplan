@@ -1,5 +1,12 @@
 import { addMinutes, differenceInMinutes, isAfter, isBefore, min } from "date-fns";
-import { getDeadline, listCandidateDays, roundUpToIncrement, setDayTime } from "@/lib/time";
+import {
+  getDeadline,
+  getZonedNow,
+  listCandidateDays,
+  roundUpToIncrement,
+  sameCalendarDay,
+  setDayTime
+} from "@/lib/time";
 import {
   ExistingSession,
   ScheduleResult,
@@ -61,6 +68,10 @@ function getWorkingWindow(day: Date, settings: WorkSettings, now: Date, deadline
 
   if (isBefore(endAt, startAt) || endAt.getTime() === startAt.getTime()) {
     return null;
+  }
+
+  if (sameCalendarDay(day, now) && isAfter(now, startAt)) {
+    startAt = now;
   }
 
   startAt = roundUpToIncrement(startAt, SESSION_INCREMENT_MINUTES);
@@ -139,6 +150,7 @@ export function buildSchedule({
   settings: WorkSettings;
   now?: Date;
 }): ScheduleResult {
+  const zonedNow = getZonedNow(settings.timezone, now);
   const activeTasks = tasks
     .filter((task) => task.status !== "DONE" && task.status !== "ARCHIVED")
     .sort((left, right) => {
@@ -156,7 +168,7 @@ export function buildSchedule({
   const results = activeTasks.map((task) => {
     let remainingMinutes = task.estimatedMinutes;
     const deadline = getDeadline(task.dueDate, task.dueTime);
-    const candidateDays = listCandidateDays(task.doDate, task.dueDate, now);
+    const candidateDays = listCandidateDays(task.doDate, task.dueDate, zonedNow);
     const chunks: ScheduledChunk[] = [];
 
     for (const day of candidateDays) {
@@ -164,7 +176,7 @@ export function buildSchedule({
         break;
       }
 
-      const window = getWorkingWindow(day, settings, now, deadline);
+      const window = getWorkingWindow(day, settings, zonedNow, deadline);
 
       if (!window) {
         continue;
