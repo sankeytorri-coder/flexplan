@@ -41,7 +41,7 @@ export function CalendarBoard({ items, anchorDate = new Date() }: { items: Calen
           <p className="mt-1 text-sm text-ink/65">Planned work sessions and conflicts, placed at their actual times.</p>
         </div>
       </div>
-      <div className="calendar-shell min-w-[1280px] overflow-hidden rounded-[1.7rem] border border-[#e7ddd0] bg-[#fffaf3]">
+      <div className="calendar-shell overflow-hidden rounded-[1.7rem] border border-[#e7ddd0] bg-[#fffaf3]">
         <div className="calendar-header-row">
           <div className="calendar-time-head">Time</div>
           {days.map((day) => (

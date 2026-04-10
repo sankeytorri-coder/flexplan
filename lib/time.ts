@@ -113,3 +113,53 @@ export function getZonedNow(timezone: string, source = new Date()) {
     0
   );
 }
+
+function getZonedParts(date: Date, timezone: string) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(date);
+  const getPart = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
+
+  return {
+    year: getPart("year"),
+    month: getPart("month"),
+    day: getPart("day"),
+    hour: getPart("hour"),
+    minute: getPart("minute"),
+    second: getPart("second")
+  };
+}
+
+export function zonedDateTimeStringToUtc(value: string, timezone: string) {
+  const [datePart, timePart = "00:00"] = value.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
+  const zonedGuess = getZonedParts(utcGuess, timezone);
+  const targetAsUtc = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  const zonedGuessAsUtc = Date.UTC(
+    zonedGuess.year,
+    zonedGuess.month - 1,
+    zonedGuess.day,
+    zonedGuess.hour,
+    zonedGuess.minute,
+    zonedGuess.second,
+    0
+  );
+
+  return new Date(utcGuess.getTime() + (targetAsUtc - zonedGuessAsUtc));
+}
+
+export function zonedDateStringToUtc(value: string, timezone: string) {
+  return zonedDateTimeStringToUtc(`${value}T00:00`, timezone);
+}

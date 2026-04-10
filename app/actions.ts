@@ -17,15 +17,15 @@ import {
   updateTaskRecord
 } from "@/lib/data";
 import { sanitizeString } from "@/lib/utils";
-import { parseClock } from "@/lib/time";
+import { parseClock, zonedDateStringToUtc, zonedDateTimeStringToUtc } from "@/lib/time";
 import { ScheduleTriggerType } from "@prisma/client";
 
-function parseDate(value: string) {
-  return new Date(`${value}T00:00:00`);
+function parseDate(value: string, timezone: string) {
+  return zonedDateStringToUtc(value, timezone);
 }
 
-function parseDateTime(value: string) {
-  return new Date(value);
+function parseDateTime(value: string, timezone: string) {
+  return zonedDateTimeStringToUtc(value, timezone);
 }
 
 function parseEstimatedMinutes(formData: FormData) {
@@ -76,8 +76,8 @@ export async function saveTaskAction(formData: FormData) {
   const payload = {
     categoryId,
     name,
-    doDate: parseDate(doDate),
-    dueDate: parseDate(dueDate),
+    doDate: parseDate(doDate, dashboard.timezone),
+    dueDate: parseDate(dueDate, dashboard.timezone),
     dueTime,
     estimatedMinutes
   };
@@ -127,8 +127,8 @@ export async function saveBlockedTimeAction(formData: FormData) {
 
   const payload = {
     label,
-    startAt: parseDateTime(startAt),
-    endAt: parseDateTime(endAt)
+    startAt: parseDateTime(startAt, dashboard.timezone),
+    endAt: parseDateTime(endAt, dashboard.timezone)
   };
 
   if (blockedTimeId) {

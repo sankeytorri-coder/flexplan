@@ -118,7 +118,7 @@ a {
 
 .calendar-header-row {
   display: grid;
-  grid-template-columns: 120px repeat(7, minmax(180px, 1fr));
+  grid-template-columns: 86px repeat(7, minmax(0, 1fr));
   border-bottom: 1px solid rgba(231, 221, 208, 0.9);
 }
 
@@ -136,7 +136,7 @@ a {
 
 .calendar-body-row {
   display: grid;
-  grid-template-columns: 120px repeat(7, minmax(180px, 1fr));
+  grid-template-columns: 86px repeat(7, minmax(0, 1fr));
 }
 
 .calendar-time-column,
@@ -174,13 +174,19 @@ a {
 
 .calendar-event-card {
   position: absolute;
-  left: 0.5rem;
-  right: 0.5rem;
+  left: 0.35rem;
+  right: 0.35rem;
   border-radius: 1.1rem;
   padding: 0.65rem 0.75rem;
   font-size: 0.75rem;
   box-shadow: 0 10px 18px rgba(84, 72, 63, 0.05);
   overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .calendar-shell {
+    min-width: 940px;
+  }
 }
 
 .planner-paper {
