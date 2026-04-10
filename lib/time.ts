@@ -56,18 +56,36 @@ export function setDayTime(day: Date, clock: string) {
   });
 }
 
-export function getDeadline(dueDate: Date, dueTime: string | null) {
-  if (!dueTime) {
-    return endOfDay(dueDate);
-  }
-
-  return setDayTime(dueDate, dueTime);
+function parseDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return { year, month, day };
 }
 
-export function listCandidateDays(doDate: Date, dueDate: Date, now = new Date()) {
-  const floor = startOfDay(now);
-  const start = isBefore(startOfDay(doDate), floor) ? floor : startOfDay(doDate);
-  const end = startOfDay(dueDate);
+export function dateKeyToUtcMidday(dateKey: string) {
+  const { year, month, day } = parseDateKey(dateKey);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+}
+
+export function setDayTimeInTimezone(day: Date, clock: string, timezone: string) {
+  return zonedDateTimeStringToUtc(`${getDateKeyInTimezone(day, timezone)}T${clock}`, timezone);
+}
+
+export function getDeadline(dueDate: Date, dueTime: string | null, timezone: string) {
+  if (!dueTime) {
+    return zonedDateTimeStringToUtc(`${getDateKeyInTimezone(dueDate, timezone)}T23:59`, timezone);
+  }
+
+  return setDayTimeInTimezone(dueDate, dueTime, timezone);
+}
+
+export function listCandidateDays(doDate: Date, dueDate: Date, timezone: string, now = new Date()) {
+  const floorKey = getDateKeyInTimezone(now, timezone);
+  const doKey = getDateKeyInTimezone(doDate, timezone);
+  const dueKey = getDateKeyInTimezone(dueDate, timezone);
+  const floor = dateKeyToUtcMidday(floorKey);
+  const preferred = dateKeyToUtcMidday(doKey);
+  const start = isBefore(preferred, floor) ? floor : preferred;
+  const end = dateKeyToUtcMidday(dueKey);
   const totalDays = differenceInCalendarDays(end, start) + 1;
 
   if (totalDays <= 0) {
@@ -77,8 +95,8 @@ export function listCandidateDays(doDate: Date, dueDate: Date, now = new Date())
   const days = Array.from({ length: totalDays }, (_, index) => addDays(start, index));
 
   return [...days].sort((left, right) => {
-    const leftDistance = Math.abs(differenceInCalendarDays(left, startOfDay(doDate)));
-    const rightDistance = Math.abs(differenceInCalendarDays(right, startOfDay(doDate)));
+    const leftDistance = Math.abs(differenceInCalendarDays(left, preferred));
+    const rightDistance = Math.abs(differenceInCalendarDays(right, preferred));
 
     if (leftDistance !== rightDistance) {
       return leftDistance - rightDistance;

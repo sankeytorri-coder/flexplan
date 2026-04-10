@@ -5,7 +5,7 @@ import {
   listCandidateDays,
   roundUpToIncrement,
   sameCalendarDay,
-  setDayTime
+  setDayTimeInTimezone
 } from "@/lib/time";
 import {
   ExistingSession,
@@ -63,8 +63,8 @@ function getWorkingWindow(day: Date, settings: WorkSettings, now: Date, deadline
     return null;
   }
 
-  let startAt = setDayTime(day, settings.defaultWorkStartTime);
-  let endAt = setDayTime(day, settings.defaultWorkEndTime);
+  let startAt = setDayTimeInTimezone(day, settings.defaultWorkStartTime, settings.timezone);
+  let endAt = setDayTimeInTimezone(day, settings.defaultWorkEndTime, settings.timezone);
 
   if (isBefore(endAt, startAt) || endAt.getTime() === startAt.getTime()) {
     return null;
@@ -181,8 +181,8 @@ export function buildSchedule({
     }
 
     let remainingMinutes = task.estimatedMinutes;
-    const deadline = getDeadline(task.dueDate, task.dueTime);
-    const candidateDays = listCandidateDays(task.doDate, task.dueDate, zonedNow);
+    const deadline = getDeadline(task.dueDate, task.dueTime, settings.timezone);
+    const candidateDays = listCandidateDays(task.doDate, task.dueDate, settings.timezone, zonedNow);
     const chunks: ScheduledChunk[] = [];
 
     for (const day of candidateDays) {
