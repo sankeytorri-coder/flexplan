@@ -11,6 +11,7 @@ import {
   saveTaskAction,
   updateSettingsAction
 } from "@/app/actions";
+import { SubmitButton } from "@/components/submit-button";
 import { formatMinutes, toDateValue } from "@/lib/utils";
 
 export function SettingsForm({
@@ -42,9 +43,9 @@ export function SettingsForm({
           <h2 className="panel-title">Working Hours</h2>
           <p className="mt-1 text-sm text-ink/65">Scheduling only happens inside these days and time windows.</p>
         </div>
-        <button className="button-primary" type="submit">
+        <SubmitButton className="button-primary" pendingLabel="Saving...">
           Save settings
-        </button>
+        </SubmitButton>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <label className="field">
@@ -106,9 +107,9 @@ export function TaskForm({
           <h2 className="panel-title">{task ? "Edit Task" : "Task Intake"}</h2>
           <p className="mt-1 text-sm text-ink/65">Do date is the preferred work date. Due date is the actual deadline.</p>
         </div>
-        <button className="button-primary" type="submit">
+        <SubmitButton className="button-primary" pendingLabel={task ? "Updating..." : "Creating..."}>
           {task ? "Update task" : "Create task"}
-        </button>
+        </SubmitButton>
       </div>
       {task ? <input name="taskId" type="hidden" value={task.id} /> : null}
       <div className="grid gap-4 md:grid-cols-2">
@@ -166,9 +167,9 @@ export function BlockedTimeForm() {
           <h2 className="panel-title">Blocked Time</h2>
           <p className="mt-1 text-sm text-ink/65">Add meetings or conflicts so the scheduler avoids them.</p>
         </div>
-        <button className="button-primary" type="submit">
+        <SubmitButton className="button-primary" pendingLabel="Saving...">
           Save block
-        </button>
+        </SubmitButton>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <label className="field">
@@ -193,20 +194,20 @@ export function TaskControls({ taskId }: { taskId: string }) {
     <div className="flex flex-wrap gap-3">
       <form action={completeTaskAction}>
         <input name="taskId" type="hidden" value={taskId} />
-        <button className="button-primary" type="submit">
+        <SubmitButton className="button-primary" pendingLabel="Saving...">
           Mark task done
-        </button>
+        </SubmitButton>
       </form>
       <form action={archiveTaskAction}>
         <input name="taskId" type="hidden" value={taskId} />
-        <button className="button-danger" type="submit">
+        <SubmitButton className="button-danger" pendingLabel="Archiving...">
           Archive
-        </button>
+        </SubmitButton>
       </form>
       <form action={manualRescheduleAction}>
-        <button className="button-secondary" type="submit">
+        <SubmitButton className="button-secondary" pendingLabel="Rebuilding...">
           Rebuild schedule
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );
@@ -220,9 +221,9 @@ export function SessionDoneForm({ sessionId }: { sessionId: string }) {
         <span className="field-label">Actual minutes</span>
         <input className="text-input min-w-24" min={0} name="actualMinutes" placeholder="120" type="number" />
       </label>
-      <button className="button-secondary" type="submit">
+      <SubmitButton className="button-secondary" pendingLabel="Saving...">
         Mark session done
-      </button>
+      </SubmitButton>
     </form>
   );
 }
@@ -246,9 +247,9 @@ export function OverrunForm({ taskId }: { taskId: string }) {
           <input className="text-input" defaultValue={0} max={59} min={0} name="extraMinutes" step={15} type="number" />
         </label>
       </div>
-      <button className="button-primary" type="submit">
+      <SubmitButton className="button-primary" pendingLabel="Creating...">
         Create continuation task
-      </button>
+      </SubmitButton>
     </form>
   );
 }
@@ -320,9 +321,9 @@ export function TaskSummaryCard({
         </Link>
         <form action={archiveTaskAction}>
           <input name="taskId" type="hidden" value={task.id} />
-          <button className="button-danger" type="submit">
+          <SubmitButton className="button-danger" pendingLabel="Archiving...">
             Archive
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>
@@ -355,9 +356,9 @@ export function BlockedTimeList({
               </div>
               <form action={deleteBlockedTimeAction}>
                 <input name="blockedTimeId" type="hidden" value={item.id} />
-                <button className="button-danger" type="submit">
+                <SubmitButton className="button-danger" pendingLabel="Deleting...">
                   Delete
-                </button>
+                </SubmitButton>
               </form>
             </div>
           ))

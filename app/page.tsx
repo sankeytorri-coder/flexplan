@@ -9,6 +9,7 @@ import {
   TaskForm,
   TaskSummaryCard
 } from "@/components/forms";
+import { SubmitButton } from "@/components/submit-button";
 import { getDashboardData } from "@/lib/data";
 import { formatMinutes } from "@/lib/utils";
 
@@ -145,9 +146,9 @@ export default async function Page() {
                 </p>
               </div>
               <form action={manualRescheduleAction}>
-                <button className="button-primary" type="submit">
+                <SubmitButton className="button-primary" pendingLabel="Rebuilding...">
                   Rebuild everything
-                </button>
+                </SubmitButton>
               </form>
             </div>
 

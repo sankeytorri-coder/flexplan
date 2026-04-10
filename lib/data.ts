@@ -4,9 +4,11 @@ import {
   SessionStatus,
   TaskStatus
 } from "@prisma/client";
+import { addDays } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { buildSchedule } from "@/lib/scheduler";
+import { nextWorkingDayFrom, parseClock } from "@/lib/time";
 import { ExistingSession, SchedulerBlockedTime, SchedulerTask, WorkSettings } from "@/lib/types";
 
 const demoUserId = "demo-user";
@@ -431,14 +433,30 @@ export async function createContinuationTask(input: {
   const sourceTask = await prisma.task.findUniqueOrThrow({
     where: { id: input.taskId }
   });
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: sourceTask.userId }
+  });
+  const now = new Date();
+  const { hours: workEndHour, minutes: workEndMinute } = parseClock(user.defaultWorkEndTime);
+  const workdayHasEnded =
+    now.getHours() > workEndHour ||
+    (now.getHours() === workEndHour && now.getMinutes() >= workEndMinute);
+  const continuationDoDate = nextWorkingDayFrom(
+    workdayHasEnded ? addDays(now, 1) : now,
+    user.defaultWorkDays
+  );
+  const continuationDueDate =
+    sourceTask.dueDate.getTime() >= continuationDoDate.getTime()
+      ? sourceTask.dueDate
+      : continuationDoDate;
 
   const continuation = await prisma.task.create({
     data: {
       userId: sourceTask.userId,
       categoryId: sourceTask.categoryId,
       name: `${sourceTask.name} (Continuation)`,
-      doDate: new Date(),
-      dueDate: sourceTask.dueDate,
+      doDate: continuationDoDate,
+      dueDate: continuationDueDate,
       dueTime: sourceTask.dueTime,
       estimatedMinutes: input.extraMinutes,
       status: TaskStatus.SCHEDULED,

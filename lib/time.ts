@@ -73,3 +73,17 @@ export function roundUpToIncrement(date: Date, incrementMinutes: number) {
   rounded.setMinutes(minutes + (incrementMinutes - remainder));
   return rounded;
 }
+
+export function nextWorkingDayFrom(date: Date, workDays: number[]) {
+  let candidate = startOfDay(date);
+
+  for (let index = 0; index < 14; index += 1) {
+    if (workDays.includes(candidate.getDay())) {
+      return candidate;
+    }
+
+    candidate = addDays(candidate, 1);
+  }
+
+  return startOfDay(date);
+}
