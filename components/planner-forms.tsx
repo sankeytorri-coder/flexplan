@@ -45,7 +45,7 @@ export function SettingsForm({
           <p className="section-kicker">Planner Setup</p>
           <h2 className="panel-title">Working Hours</h2>
           <p className="mt-1 text-sm text-ink/65">
-            Scheduling only happens inside these days and time windows. Use 24-hour time, like `17:00` for 5 PM.
+            FlexPlan only schedules inside the days and times you choose here.
           </p>
         </div>
         <SubmitButton className="button-primary" pendingLabel="Saving...">
@@ -122,7 +122,7 @@ export function TaskForm({
         <div>
           <p className="section-kicker">Task Entry</p>
           <h2 className="panel-title">{task ? "Edit Task" : "Task Intake"}</h2>
-          <p className="mt-1 text-sm text-ink/65">Do date is the preferred work date. Due date is the actual deadline.</p>
+          <p className="mt-1 text-sm text-ink/65">Do date is when you plan to work on it. Due date is when it must be finished.</p>
         </div>
         <SubmitButton className="button-primary" pendingLabel={task ? "Updating..." : "Creating..."}>
           {task ? "Update task" : "Create task"}
@@ -158,7 +158,7 @@ export function TaskForm({
               </option>
             ))}
           </select>
-          <p className="text-sm text-ink/60">Use this when a task cannot begin until another task is completed.</p>
+          <p className="text-sm text-ink/60">Choose another task only if this one cannot start until that task is done.</p>
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="field">
@@ -194,7 +194,7 @@ export function BlockedTimeForm() {
         <div>
           <p className="section-kicker">Conflict Block</p>
           <h2 className="panel-title">Blocked Time</h2>
-          <p className="mt-1 text-sm text-ink/65">Add meetings or conflicts so the scheduler avoids them.</p>
+          <p className="mt-1 text-sm text-ink/65">Add times when you are unavailable so FlexPlan will schedule around them.</p>
         </div>
         <SubmitButton className="button-primary" pendingLabel="Saving...">
           Save block
@@ -261,11 +261,11 @@ export function OverrunForm({ taskId }: { taskId: string }) {
   return (
     <form action={reportOverrunAction} className="panel rose-wash space-y-4">
       <input name="taskId" type="hidden" value={taskId} />
-      <div>
-        <p className="section-kicker">Adjustment</p>
-        <h2 className="panel-title">Report Overrun</h2>
-        <p className="mt-1 text-sm text-ink/65">Create a linked continuation task when the original estimate was too small.</p>
-      </div>
+        <div>
+          <p className="section-kicker">Adjustment</p>
+          <h2 className="panel-title">Report Overrun</h2>
+          <p className="mt-1 text-sm text-ink/65">Use this if the task took longer than expected and you still need more time to finish it.</p>
+        </div>
       <div className="grid grid-cols-2 gap-3">
         <label className="field">
           <span className="field-label">Extra hours</span>

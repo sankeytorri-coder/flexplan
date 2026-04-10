@@ -111,18 +111,18 @@ export default async function PlannerPage() {
                 <p className="mt-1">Choose the days and hours when FlexPlan is allowed to schedule.</p>
               </div>
               <div className="summary-card">
-                <p className="font-medium text-[#54483f]">2. Add tasks and dependencies</p>
+                <p className="font-medium text-[#54483f]">2. Add your tasks</p>
                 <p className="mt-1">
-                  Enter the task facts on the right. Add a dependency only if one task must wait for another to be fully done.
+                  Enter the task details on the right. Only use a dependency if one task must wait for another to be finished first.
                 </p>
               </div>
               <div className="summary-card">
                 <p className="font-medium text-[#54483f]">3. Block out conflicts</p>
-                <p className="mt-1">Meetings, lunch, and appointments should go into Blocked Time so the scheduler avoids them.</p>
+                <p className="mt-1">Add meetings, lunch, classes, or appointments so the planner does not schedule on top of them.</p>
               </div>
               <div className="summary-card">
-                <p className="font-medium text-[#54483f]">4. Clear tasks you do not want</p>
-                <p className="mt-1">Use Archive on any task card to remove it from your active planner.</p>
+                <p className="font-medium text-[#54483f]">4. Review the plan</p>
+                <p className="mt-1">Check the calendar to see where your work was placed. Use Archive on a task card if you want to remove it.</p>
               </div>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default async function PlannerPage() {
                 Task List
               </h2>
               <p className="mt-1 text-sm text-ink/65">
-                Open any task to inspect sessions, mark completion, or report an overrun.
+                Open any task to see its scheduled work sessions, mark progress, or report extra time needed.
               </p>
             </div>
             <div className="space-y-4">
@@ -166,7 +166,7 @@ export default async function PlannerPage() {
                   Schedule spread
                 </h2>
                 <p className="mt-3 max-w-2xl text-base text-ink/65">
-                  Your calendar is the main page of the planner. Tasks, conflicts, and changes all flow back here.
+                  This is the main planner view. Tasks, blocked time, and schedule changes all show up here.
                 </p>
               </div>
               <form action={manualRescheduleAction}>
@@ -190,7 +190,7 @@ export default async function PlannerPage() {
                 <p className="mt-3 text-sm text-ink/65">
                   {todaysSessions.length
                     ? `${formatMinutes(todaysSessions.reduce((sum, session) => sum + session.plannedMinutes, 0))} planned for today.`
-                    : "Add a task or rebuild the schedule to fill today's page."}
+                    : "Add a task, add blocked time, or rebuild the schedule to update today’s plan."}
                 </p>
               </div>
 
@@ -218,7 +218,7 @@ export default async function PlannerPage() {
                   <p className="section-kicker">Waiting On</p>
                   <h2 className="panel-title">Tasks paused by dependencies</h2>
                   <p className="mt-1 text-sm text-ink/65">
-                    These tasks will not go on the calendar until their required earlier task has been completed.
+                    These tasks will stay off the calendar until the task they depend on has been completed.
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -228,7 +228,7 @@ export default async function PlannerPage() {
                         <div>
                           <p className="font-medium text-[#54483f]">{task.name}</p>
                           <p className="mt-1 text-sm text-ink/65">
-                            Waiting for {task.dependsOnTask?.name ?? "another task"} before scheduling can begin.
+                            Waiting for {task.dependsOnTask?.name ?? "another task"} before it can be scheduled.
                           </p>
                         </div>
                         <span className="badge bg-sun/20 text-ink">Waiting</span>
@@ -245,7 +245,7 @@ export default async function PlannerPage() {
                   <p className="section-kicker">Needs Attention</p>
                   <h2 className="panel-title">Tasks not placed on the calendar yet</h2>
                   <p className="mt-1 text-sm text-ink/65">
-                    These tasks exist, but FlexPlan could not place them inside the current available work window.
+                    These tasks could not fit into the current available time before their due dates.
                   </p>
                 </div>
                 <div className="space-y-3">
