@@ -19,6 +19,12 @@ type CalendarItem = {
 const hours = Array.from({ length: 12 }, (_, index) => index + 8);
 const HOUR_HEIGHT = 88;
 
+function atMidday(date: Date) {
+  const value = new Date(date);
+  value.setHours(12, 0, 0, 0);
+  return value;
+}
+
 function getTopPosition(date: Date, timezone: string) {
   const totalMinutes = getClockMinutesInTimezone(date, timezone);
   return ((totalMinutes - hours[0] * 60) / 60) * HOUR_HEIGHT;
@@ -42,7 +48,7 @@ export function CalendarBoard({
   const days = eachDayOfInterval({
     start,
     end: endOfWeek(addDays(start, 6), { weekStartsOn: 1 })
-  });
+  }).map(atMidday);
   const timelineHeight = hours.length * HOUR_HEIGHT;
 
   return (
