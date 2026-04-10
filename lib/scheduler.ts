@@ -1,5 +1,5 @@
 import { addMinutes, differenceInMinutes, isAfter, isBefore, max, min, startOfDay } from "date-fns";
-import { getDeadline, listCandidateDays, setDayTime } from "@/lib/time";
+import { getDeadline, listCandidateDays, roundUpToIncrement, setDayTime } from "@/lib/time";
 import {
   ExistingSession,
   ScheduleResult,
@@ -67,6 +67,8 @@ function getWorkingWindow(day: Date, settings: WorkSettings, now: Date, deadline
     startAt = now;
   }
 
+  startAt = roundUpToIncrement(startAt, SESSION_INCREMENT_MINUTES);
+
   endAt = min([endAt, deadline]);
 
   if (!isBefore(startAt, endAt)) {
@@ -102,7 +104,8 @@ function buildChunk(
   range: TimeRange,
   remainingMinutes: number
 ): { chunk: ScheduledChunk; usedMinutes: number } | null {
-  const availableMinutes = differenceInMinutes(range.endAt, range.startAt);
+  const snappedStart = roundUpToIncrement(range.startAt, SESSION_INCREMENT_MINUTES);
+  const availableMinutes = differenceInMinutes(range.endAt, snappedStart);
   const idealMinutes = Math.min(remainingMinutes, DEFAULT_CHUNK_MINUTES, availableMinutes);
   const roundedMinutes = Math.max(
     Math.min(idealMinutes, availableMinutes),
@@ -120,8 +123,8 @@ function buildChunk(
     usedMinutes: snappedMinutes,
     chunk: {
       taskId: task.id,
-      startAt: range.startAt,
-      endAt: addMinutes(range.startAt, snappedMinutes),
+      startAt: snappedStart,
+      endAt: addMinutes(snappedStart, snappedMinutes),
       plannedMinutes: snappedMinutes
     }
   };

@@ -126,6 +126,10 @@ export function TaskForm({
             ))}
           </select>
         </label>
+        <label className="field">
+          <span className="field-label">Or make a new category</span>
+          <input className="text-input" name="newCategoryName" placeholder="Reading, Health, Chores..." />
+        </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="field">
             <span className="field-label">Est. hours</span>
@@ -276,7 +280,7 @@ export function TaskSummaryCard({
   const nextSession = task.sessions.find((session) => session.status === "PLANNED");
 
   return (
-    <Link className="sticker-card block" href={`/tasks/${task.id}`}>
+    <div className="sticker-card">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -310,7 +314,18 @@ export function TaskSummaryCard({
           <p>{nextSession ? `Next ${nextSession.startAt.toLocaleString()}` : "No future session"}</p>
         </div>
       </div>
-    </Link>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Link className="button-secondary" href={`/tasks/${task.id}`}>
+          Open task
+        </Link>
+        <form action={archiveTaskAction}>
+          <input name="taskId" type="hidden" value={task.id} />
+          <button className="button-danger" type="submit">
+            Archive
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
 

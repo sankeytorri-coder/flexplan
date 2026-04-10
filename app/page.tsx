@@ -52,6 +52,17 @@ export default async function Page() {
       meta: "Blocked time"
     }))
   ];
+  const currentWeekStart = new Date(today);
+  currentWeekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  currentWeekStart.setHours(0, 0, 0, 0);
+  const currentWeekEnd = new Date(currentWeekStart);
+  currentWeekEnd.setDate(currentWeekStart.getDate() + 7);
+  const hasItemsThisWeek = calendarItems.some(
+    (item) => item.startAt >= currentWeekStart && item.startAt < currentWeekEnd
+  );
+  const fallbackAnchorDate = hasItemsThisWeek
+    ? today
+    : [...calendarItems].sort((left, right) => left.startAt.getTime() - right.startAt.getTime())[0]?.startAt ?? today;
 
   return (
     <DashboardShell
@@ -77,12 +88,12 @@ export default async function Page() {
               <div className="summary-card">
                 <p className="font-medium text-[#54483f]">2. Add tasks</p>
                 <p className="mt-1">
-                  Fill in the task form on the right. Categories are just color labels to help you organize your tasks.
+                  Fill in the task form on the right. You can pick an existing category or type your own.
                 </p>
               </div>
               <div className="summary-card">
                 <p className="font-medium text-[#54483f]">3. Remove sample items</p>
-                <p className="mt-1">Open a sample task from the task list and press Archive if you want to clear it out.</p>
+                <p className="mt-1">Use the Archive button on a task card if you want to clear out the sample tasks.</p>
               </div>
               <div className="summary-card">
                 <p className="font-medium text-[#54483f]">4. Review the schedule</p>
@@ -173,7 +184,7 @@ export default async function Page() {
               </div>
             </div>
 
-            <CalendarBoard items={calendarItems} />
+            <CalendarBoard anchorDate={fallbackAnchorDate} items={calendarItems} />
 
             <BlockedTimeList items={dashboard.blockedTimes} />
           </div>

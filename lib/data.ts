@@ -10,6 +10,7 @@ import { buildSchedule } from "@/lib/scheduler";
 import { ExistingSession, SchedulerBlockedTime, SchedulerTask, WorkSettings } from "@/lib/types";
 
 const demoUserId = "demo-user";
+const starterCategoryColors = ["#2a9d8f", "#f4a261", "#e76f51", "#7f95d1", "#d17fa3", "#8eb486"];
 
 async function ensureDemoUser() {
   const existing = await prisma.user.findFirst({
@@ -32,9 +33,10 @@ async function ensureDemoUser() {
       defaultWorkEndTime: "17:00",
       categories: {
         create: [
-          { name: "Deep Work", color: "#2a9d8f" },
-          { name: "Admin", color: "#f4a261" },
-          { name: "Personal", color: "#e76f51" }
+          { name: "Work", color: "#2a9d8f" },
+          { name: "Personal", color: "#e76f51" },
+          { name: "School", color: "#7f95d1" },
+          { name: "Errands", color: "#f4a261" }
         ]
       }
     },
@@ -247,6 +249,40 @@ export async function createTaskRecord(input: {
   });
 
   return runReschedule(input.userId, ScheduleTriggerType.TASK_CREATED);
+}
+
+export async function ensureCategoryRecord(userId: string, rawName: string) {
+  const name = rawName.trim();
+
+  if (!name) {
+    return null;
+  }
+
+  const existing = await prisma.category.findFirst({
+    where: {
+      userId,
+      name: {
+        equals: name,
+        mode: "insensitive"
+      }
+    }
+  });
+
+  if (existing) {
+    return existing;
+  }
+
+  const count = await prisma.category.count({
+    where: { userId }
+  });
+
+  return prisma.category.create({
+    data: {
+      userId,
+      name,
+      color: starterCategoryColors[count % starterCategoryColors.length]
+    }
+  });
 }
 
 export async function updateTaskRecord(

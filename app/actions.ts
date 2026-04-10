@@ -8,6 +8,7 @@ import {
   createContinuationTask,
   createTaskRecord,
   deleteBlockedTimeRecord,
+  ensureCategoryRecord,
   getDashboardData,
   markSessionDone,
   runReschedule,
@@ -36,11 +37,17 @@ export async function saveTaskAction(formData: FormData) {
   const dashboard = await getDashboardData();
   const taskId = sanitizeString(formData.get("taskId"));
   const name = sanitizeString(formData.get("name"));
-  const categoryId = sanitizeString(formData.get("categoryId"));
+  const selectedCategoryId = sanitizeString(formData.get("categoryId"));
+  const newCategoryName = sanitizeString(formData.get("newCategoryName"));
   const doDate = sanitizeString(formData.get("doDate"));
   const dueDate = sanitizeString(formData.get("dueDate"));
   const dueTime = sanitizeString(formData.get("dueTime")) || null;
   const estimatedMinutes = parseEstimatedMinutes(formData);
+
+  const ensuredCategory = newCategoryName
+    ? await ensureCategoryRecord(dashboard.id, newCategoryName)
+    : null;
+  const categoryId = ensuredCategory?.id ?? selectedCategoryId;
 
   if (!name || !categoryId || !doDate || !dueDate || estimatedMinutes <= 0) {
     return;
