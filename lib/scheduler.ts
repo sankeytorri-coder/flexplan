@@ -1,4 +1,4 @@
-import { addMinutes, differenceInMinutes, isAfter, isBefore, max, min, startOfDay } from "date-fns";
+import { addMinutes, differenceInMinutes, isBefore, min } from "date-fns";
 import { getDeadline, listCandidateDays, roundUpToIncrement, setDayTime } from "@/lib/time";
 import {
   ExistingSession,
@@ -61,10 +61,6 @@ function getWorkingWindow(day: Date, settings: WorkSettings, now: Date, deadline
 
   if (isBefore(endAt, startAt) || endAt.getTime() === startAt.getTime()) {
     return null;
-  }
-
-  if (startOfDay(day).getTime() === startOfDay(now).getTime() && isAfter(now, startAt)) {
-    startAt = now;
   }
 
   startAt = roundUpToIncrement(startAt, SESSION_INCREMENT_MINUTES);
