@@ -8,6 +8,39 @@ import {
   startOfDay
 } from "date-fns";
 
+export const supportedTimezones = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Phoenix",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "Europe/London",
+  "Europe/Paris",
+  "Asia/Tokyo",
+  "Australia/Sydney"
+] as const;
+
+const fallbackTimezone = "America/New_York";
+
+export function normalizeTimezone(timezone: string | null | undefined) {
+  const value = timezone?.trim();
+
+  if (!value) {
+    return fallbackTimezone;
+  }
+
+  try {
+    Intl.DateTimeFormat("en-US", {
+      timeZone: value
+    }).format(new Date());
+    return value;
+  } catch {
+    return fallbackTimezone;
+  }
+}
+
 export function parseClock(clock: string) {
   const [hours, minutes] = clock.split(":").map(Number);
   return { hours, minutes };
@@ -89,8 +122,9 @@ export function nextWorkingDayFrom(date: Date, workDays: number[]) {
 }
 
 export function getZonedNow(timezone: string, source = new Date()) {
+  const safeTimezone = normalizeTimezone(timezone);
   const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
+    timeZone: safeTimezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -115,8 +149,9 @@ export function getZonedNow(timezone: string, source = new Date()) {
 }
 
 function getZonedParts(date: Date, timezone: string) {
+  const safeTimezone = normalizeTimezone(timezone);
   const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
+    timeZone: safeTimezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

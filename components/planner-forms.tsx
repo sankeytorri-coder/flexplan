@@ -14,6 +14,7 @@ import {
   updateSettingsAction
 } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
+import { supportedTimezones } from "@/lib/time";
 import { formatMinutes, toDateValue } from "@/lib/utils";
 
 export function SettingsForm({
@@ -54,7 +55,13 @@ export function SettingsForm({
       <div className="grid gap-4 md:grid-cols-3">
         <label className="field">
           <span className="field-label">Timezone</span>
-          <input className="text-input" defaultValue={user.timezone} name="timezone" />
+          <select className="select-input" defaultValue={user.timezone} name="timezone">
+            {supportedTimezones.map((timezone) => (
+              <option key={timezone} value={timezone}>
+                {timezone}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="field">
           <span className="field-label">Start time</span>

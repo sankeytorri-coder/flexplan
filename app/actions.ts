@@ -23,7 +23,12 @@ import {
   signOutCurrentSession
 } from "@/lib/auth";
 import { sanitizeString } from "@/lib/utils";
-import { parseClock, zonedDateStringToUtc, zonedDateTimeStringToUtc } from "@/lib/time";
+import {
+  normalizeTimezone,
+  parseClock,
+  zonedDateStringToUtc,
+  zonedDateTimeStringToUtc
+} from "@/lib/time";
 import { ScheduleTriggerType } from "@prisma/client";
 
 function parseDate(value: string, timezone: string) {
@@ -164,7 +169,7 @@ export async function deleteBlockedTimeAction(formData: FormData) {
 export async function updateSettingsAction(formData: FormData) {
   const currentUser = await requireCurrentUser();
   const dashboard = await getDashboardData();
-  const timezone = sanitizeString(formData.get("timezone")) || dashboard.timezone;
+  const timezone = normalizeTimezone(sanitizeString(formData.get("timezone")) || dashboard.timezone);
   const requestedStartTime =
     sanitizeString(formData.get("defaultWorkStartTime")) || dashboard.defaultWorkStartTime;
   const requestedEndTime =
