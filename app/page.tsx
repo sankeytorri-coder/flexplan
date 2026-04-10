@@ -60,8 +60,14 @@ export default async function Page() {
     .sort((left, right) => left.startAt.getTime() - right.startAt.getTime())[0];
   const fallbackAnchorDate =
     upcomingScheduledItem?.startAt ??
+    [...dashboard.tasks]
+      .filter((task) => task.status !== "DONE" && task.status !== "ARCHIVED")
+      .sort((left, right) => left.doDate.getTime() - right.doDate.getTime())[0]?.doDate ??
     [...calendarItems].sort((left, right) => left.startAt.getTime() - right.startAt.getTime())[0]?.startAt ??
     today;
+  const unscheduledTasks = dashboard.tasks.filter(
+    (task) => task.status === "AT_RISK" && task.sessions.filter((session) => session.status === "PLANNED").length === 0
+  );
 
   return (
     <DashboardShell
@@ -184,6 +190,34 @@ export default async function Page() {
             </div>
 
             <CalendarBoard anchorDate={fallbackAnchorDate} items={calendarItems} />
+
+            {unscheduledTasks.length ? (
+              <div className="panel rose-wash space-y-4">
+                <div>
+                  <p className="section-kicker">Needs Attention</p>
+                  <h2 className="panel-title">Tasks not placed on the calendar yet</h2>
+                  <p className="mt-1 text-sm text-ink/65">
+                    These tasks exist, but FlexPlan could not place them inside the current available work window.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {unscheduledTasks.map((task) => (
+                    <div className="rounded-[1.4rem] border border-ink/10 bg-white/92 p-4" key={task.id}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-[#54483f]">{task.name}</p>
+                          <p className="mt-1 text-sm text-ink/65">
+                            Do date {format(task.doDate, "PP")} - due {format(task.dueDate, "PP")}
+                            {task.dueTime ? ` at ${task.dueTime}` : ""}
+                          </p>
+                        </div>
+                        <span className="badge bg-coral/15 text-coral">At risk</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <BlockedTimeList items={dashboard.blockedTimes} />
           </div>
