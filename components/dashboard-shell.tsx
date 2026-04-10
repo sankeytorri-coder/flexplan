@@ -4,11 +4,13 @@ import { ReactNode } from "react";
 export function DashboardShell({
   heading,
   subheading,
-  children
+  children,
+  nav
 }: {
   heading: string;
   subheading: string;
   children: ReactNode;
+  nav?: ReactNode;
 }) {
   const isBrandHero = heading === "FlexPlan";
 
@@ -42,9 +44,11 @@ export function DashboardShell({
             </div>
 
             <nav className="flex items-center gap-3 text-sm">
-              <Link className="button-secondary" href="/">
-                Planner Home
-              </Link>
+              {nav ?? (
+                <Link className="button-secondary" href="/">
+                  Home
+                </Link>
+              )}
             </nav>
           </div>
 

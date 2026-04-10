@@ -10,6 +10,7 @@ datasource db {
 enum TaskStatus {
   SCHEDULED
   IN_PROGRESS
+  WAITING
   DONE
   AT_RISK
   ARCHIVED
@@ -35,6 +36,8 @@ enum ScheduleTriggerType {
 model User {
   id                   String        @id @default(cuid())
   name                 String
+  email                String?       @unique
+  passwordHash         String?
   timezone             String        @default("America/New_York")
   defaultWorkDays      Int[]
   defaultWorkStartTime String
@@ -43,6 +46,7 @@ model User {
   tasks                Task[]
   blockedTimes         BlockedTime[]
   scheduleRuns         ScheduleRun[]
+  authSessions         AuthSession[]
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 }
@@ -75,6 +79,9 @@ model Task {
   parentTaskId       String?
   parentTask         Task?             @relation("TaskContinuations", fields: [parentTaskId], references: [id], onDelete: SetNull)
   continuations      Task[]            @relation("TaskContinuations")
+  dependsOnTaskId    String?
+  dependsOnTask      Task?             @relation("TaskDependencies", fields: [dependsOnTaskId], references: [id], onDelete: SetNull)
+  dependentTasks     Task[]            @relation("TaskDependencies")
   createdFromOverrun Boolean           @default(false)
   completedAt        DateTime?
   archivedAt         DateTime?
@@ -116,4 +123,16 @@ model ScheduleRun {
   finishedAt    DateTime?
   resultSummary String
   createdAt     DateTime            @default(now())
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

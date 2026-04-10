@@ -13,7 +13,8 @@ export type SchedulerTask = {
   dueDate: Date;
   dueTime: string | null;
   estimatedMinutes: number;
-  status: "SCHEDULED" | "IN_PROGRESS" | "DONE" | "AT_RISK" | "ARCHIVED";
+  status: "SCHEDULED" | "IN_PROGRESS" | "WAITING" | "DONE" | "AT_RISK" | "ARCHIVED";
+  dependsOnTaskId?: string | null;
   createdFromOverrun?: boolean;
 };
 
@@ -44,7 +45,7 @@ export type TaskSchedulingResult = {
   taskId: string;
   chunks: ScheduledChunk[];
   unscheduledMinutes: number;
-  status: "SCHEDULED" | "AT_RISK";
+  status: "SCHEDULED" | "AT_RISK" | "WAITING";
 };
 
 export type ScheduleResult = {

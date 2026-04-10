@@ -151,6 +151,7 @@ export function buildSchedule({
   now?: Date;
 }): ScheduleResult {
   const zonedNow = getZonedNow(settings.timezone, now);
+  const taskLookup = new Map(tasks.map((task) => [task.id, task]));
   const activeTasks = tasks
     .filter((task) => task.status !== "DONE" && task.status !== "ARCHIVED")
     .sort((left, right) => {
@@ -166,6 +167,19 @@ export function buildSchedule({
 
   const plannedChunks: ScheduledChunk[] = [];
   const results = activeTasks.map((task) => {
+    if (task.dependsOnTaskId) {
+      const dependency = taskLookup.get(task.dependsOnTaskId);
+
+      if (!dependency || dependency.status !== "DONE") {
+        return {
+          taskId: task.id,
+          chunks: [] as ScheduledChunk[],
+          unscheduledMinutes: task.estimatedMinutes,
+          status: "WAITING"
+        } as const;
+      }
+    }
+
     let remainingMinutes = task.estimatedMinutes;
     const deadline = getDeadline(task.dueDate, task.dueTime);
     const candidateDays = listCandidateDays(task.doDate, task.dueDate, zonedNow);
@@ -210,11 +224,12 @@ export function buildSchedule({
     } as const;
   });
 
-  const atRiskCount = results.filter((result) => result.unscheduledMinutes > 0).length;
-  const scheduledCount = results.length - atRiskCount;
+  const waitingCount = results.filter((result) => result.status === "WAITING").length;
+  const atRiskCount = results.filter((result) => result.status === "AT_RISK").length;
+  const scheduledCount = results.length - atRiskCount - waitingCount;
 
   return {
     results,
-    summary: `${scheduledCount} task(s) fully scheduled, ${atRiskCount} task(s) marked at risk`
+    summary: `${scheduledCount} task(s) fully scheduled, ${atRiskCount} task(s) marked at risk, ${waitingCount} task(s) waiting on dependencies`
   };
 }

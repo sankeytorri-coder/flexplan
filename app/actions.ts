@@ -16,6 +16,12 @@ import {
   updateSettingsRecord,
   updateTaskRecord
 } from "@/lib/data";
+import {
+  createUserWithSession,
+  requireCurrentUser,
+  signInWithPassword,
+  signOutCurrentSession
+} from "@/lib/auth";
 import { sanitizeString } from "@/lib/utils";
 import { parseClock, zonedDateStringToUtc, zonedDateTimeStringToUtc } from "@/lib/time";
 import { ScheduleTriggerType } from "@prisma/client";
@@ -54,18 +60,20 @@ function normalizeWorkEndTime(startTime: string, endTime: string) {
 }
 
 export async function saveTaskAction(formData: FormData) {
+  const currentUser = await requireCurrentUser();
   const dashboard = await getDashboardData();
   const taskId = sanitizeString(formData.get("taskId"));
   const name = sanitizeString(formData.get("name"));
   const selectedCategoryId = sanitizeString(formData.get("categoryId"));
   const newCategoryName = sanitizeString(formData.get("newCategoryName"));
+  const dependsOnTaskId = sanitizeString(formData.get("dependsOnTaskId")) || null;
   const doDate = sanitizeString(formData.get("doDate"));
   const dueDate = sanitizeString(formData.get("dueDate"));
   const dueTime = sanitizeString(formData.get("dueTime")) || null;
   const estimatedMinutes = parseEstimatedMinutes(formData);
 
   const ensuredCategory = newCategoryName
-    ? await ensureCategoryRecord(dashboard.id, newCategoryName)
+    ? await ensureCategoryRecord(currentUser.id, newCategoryName)
     : null;
   const categoryId = ensuredCategory?.id ?? selectedCategoryId;
 
@@ -79,14 +87,15 @@ export async function saveTaskAction(formData: FormData) {
     doDate: parseDate(doDate, dashboard.timezone),
     dueDate: parseDate(dueDate, dashboard.timezone),
     dueTime,
-    estimatedMinutes
+    estimatedMinutes,
+    dependsOnTaskId
   };
 
   if (taskId) {
     await updateTaskRecord(taskId, payload);
   } else {
     await createTaskRecord({
-      userId: dashboard.id,
+      userId: currentUser.id,
       ...payload
     });
   }
@@ -100,7 +109,7 @@ export async function archiveTaskAction(formData: FormData) {
   }
 
   await archiveTaskRecord(taskId);
-  redirect("/");
+  redirect("/planner");
 }
 
 export async function completeTaskAction(formData: FormData) {
@@ -111,10 +120,11 @@ export async function completeTaskAction(formData: FormData) {
   }
 
   await completeTaskRecord(taskId);
-  redirect("/");
+  redirect("/planner");
 }
 
 export async function saveBlockedTimeAction(formData: FormData) {
+  const currentUser = await requireCurrentUser();
   const dashboard = await getDashboardData();
   const blockedTimeId = sanitizeString(formData.get("blockedTimeId"));
   const label = sanitizeString(formData.get("label")) || null;
@@ -135,7 +145,7 @@ export async function saveBlockedTimeAction(formData: FormData) {
     await updateBlockedTimeRecord(blockedTimeId, payload);
   } else {
     await createBlockedTimeRecord({
-      userId: dashboard.id,
+      userId: currentUser.id,
       ...payload
     });
   }
@@ -152,6 +162,7 @@ export async function deleteBlockedTimeAction(formData: FormData) {
 }
 
 export async function updateSettingsAction(formData: FormData) {
+  const currentUser = await requireCurrentUser();
   const dashboard = await getDashboardData();
   const timezone = sanitizeString(formData.get("timezone")) || dashboard.timezone;
   const requestedStartTime =
@@ -166,7 +177,7 @@ export async function updateSettingsAction(formData: FormData) {
     .filter((value) => Number.isInteger(value));
 
   await updateSettingsRecord({
-    userId: dashboard.id,
+    userId: currentUser.id,
     timezone,
     defaultWorkDays: defaultWorkDays.length ? defaultWorkDays : dashboard.defaultWorkDays,
     defaultWorkStartTime,
@@ -200,10 +211,54 @@ export async function reportOverrunAction(formData: FormData) {
     extraMinutes
   });
 
-  redirect(`/tasks/${continuation.id}`);
+  redirect(`/planner/tasks/${continuation.id}`);
 }
 
 export async function manualRescheduleAction() {
-  const dashboard = await getDashboardData();
-  await runReschedule(dashboard.id, ScheduleTriggerType.MANUAL_RESCHEDULE);
+  const currentUser = await requireCurrentUser();
+  await runReschedule(currentUser.id, ScheduleTriggerType.MANUAL_RESCHEDULE);
+}
+
+export async function signUpAction(formData: FormData) {
+  const name = sanitizeString(formData.get("name"));
+  const email = sanitizeString(formData.get("email"));
+  const password = sanitizeString(formData.get("password"));
+
+  if (!name || !email || password.length < 8) {
+    redirect("/signup?error=Please%20enter%20your%20name,%20email,%20and%20an%208-character%20password.");
+  }
+
+  const result = await createUserWithSession({
+    name,
+    email,
+    password
+  });
+
+  if ("error" in result) {
+    redirect(`/signup?error=${encodeURIComponent(result.error ?? "Unable to create account.")}`);
+  }
+
+  redirect("/planner");
+}
+
+export async function logInAction(formData: FormData) {
+  const email = sanitizeString(formData.get("email"));
+  const password = sanitizeString(formData.get("password"));
+
+  if (!email || !password) {
+    redirect("/login?error=Please%20enter%20both%20your%20email%20and%20password.");
+  }
+
+  const result = await signInWithPassword(email, password);
+
+  if ("error" in result) {
+    redirect(`/login?error=${encodeURIComponent(result.error ?? "Unable to log in.")}`);
+  }
+
+  redirect("/planner");
+}
+
+export async function logOutAction() {
+  await signOutCurrentSession();
+  redirect("/");
 }

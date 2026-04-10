@@ -7,53 +7,68 @@ import {
 import { addDays } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireCurrentUser } from "@/lib/auth";
 import { buildSchedule } from "@/lib/scheduler";
 import { nextWorkingDayFrom, parseClock } from "@/lib/time";
 import { ExistingSession, SchedulerBlockedTime, SchedulerTask, WorkSettings } from "@/lib/types";
 
-const demoUserId = "demo-user";
 const starterCategoryColors = ["#2a9d8f", "#f4a261", "#e76f51", "#7f95d1", "#d17fa3", "#8eb486"];
+const plannerPaths = ["/planner"];
 
-async function ensureDemoUser() {
-  const existing = await prisma.user.findFirst({
-    include: {
-      categories: true
-    }
-  });
+export type DashboardData = Prisma.UserGetPayload<{
+  include: {
+    categories: true;
+    blockedTimes: true;
+    tasks: {
+      include: {
+        category: true;
+        sessions: true;
+        continuations: {
+          include: {
+            category: true;
+          };
+        };
+        parentTask: true;
+        dependsOnTask: true;
+      };
+    };
+    scheduleRuns: true;
+  };
+}>;
 
-  if (existing) {
-    return existing;
+function revalidatePlannerPaths(taskId?: string) {
+  plannerPaths.forEach((path) => revalidatePath(path));
+
+  if (taskId) {
+    revalidatePath(`/planner/tasks/${taskId}`);
   }
-
-  const created = await prisma.user.create({
-    data: {
-      id: demoUserId,
-      name: "Demo User",
-      timezone: "America/New_York",
-      defaultWorkDays: [1, 2, 3, 4, 5],
-      defaultWorkStartTime: "09:00",
-      defaultWorkEndTime: "17:00",
-      categories: {
-        create: [
-          { name: "Work", color: "#2a9d8f" },
-          { name: "Personal", color: "#e76f51" },
-          { name: "School", color: "#7f95d1" },
-          { name: "Errands", color: "#f4a261" }
-        ]
-      }
-    },
-    include: {
-      categories: true
-    }
-  });
-
-  return created;
 }
 
-export async function getDashboardData() {
-  const user = await ensureDemoUser();
-  const fullUser = await prisma.user.findUniqueOrThrow({
-    where: { id: user.id },
+async function ensureUserCategories(userId: string) {
+  const categoryCount = await prisma.category.count({
+    where: { userId }
+  });
+
+  if (categoryCount > 0) {
+    return;
+  }
+
+  await prisma.category.createMany({
+    data: [
+      { userId, name: "Work", color: "#2a9d8f" },
+      { userId, name: "Personal", color: "#e76f51" },
+      { userId, name: "School", color: "#7f95d1" },
+      { userId, name: "Errands", color: "#f4a261" }
+    ]
+  });
+}
+
+export async function getDashboardData(): Promise<DashboardData> {
+  const currentUser = await requireCurrentUser();
+  await ensureUserCategories(currentUser.id);
+
+  return prisma.user.findUniqueOrThrow({
+    where: { id: currentUser.id },
     include: {
       categories: {
         orderBy: { name: "asc" }
@@ -76,7 +91,8 @@ export async function getDashboardData() {
             },
             orderBy: { createdAt: "asc" }
           },
-          parentTask: true
+          parentTask: true,
+          dependsOnTask: true
         },
         orderBy: [{ dueDate: "asc" }, { doDate: "asc" }]
       },
@@ -86,8 +102,6 @@ export async function getDashboardData() {
       }
     }
   });
-
-  return fullUser;
 }
 
 function mapSettings(user: {
@@ -142,7 +156,8 @@ async function collectSchedulingInputs(userId: string) {
     dueDate: task.dueDate,
     dueTime: task.dueTime,
     estimatedMinutes: task.estimatedMinutes,
-    status: task.status
+    status: task.status,
+    dependsOnTaskId: task.dependsOnTaskId
   }));
 
   const mappedBlockedTimes: SchedulerBlockedTime[] = blockedTimes.map((blockedTime) => ({
@@ -202,7 +217,12 @@ export async function runReschedule(userId: string, triggerType: ScheduleTrigger
       await tx.task.update({
         where: { id: task.id },
         data: {
-          status: result.unscheduledMinutes > 0 ? TaskStatus.AT_RISK : TaskStatus.SCHEDULED
+          status:
+            result.status === "WAITING"
+              ? TaskStatus.WAITING
+              : result.unscheduledMinutes > 0
+                ? TaskStatus.AT_RISK
+                : TaskStatus.SCHEDULED
         }
       });
 
@@ -229,7 +249,7 @@ export async function runReschedule(userId: string, triggerType: ScheduleTrigger
     });
   });
 
-  revalidatePath("/");
+  revalidatePlannerPaths();
 
   return scheduleResult;
 }
@@ -242,10 +262,14 @@ export async function createTaskRecord(input: {
   dueDate: Date;
   dueTime: string | null;
   estimatedMinutes: number;
+  dependsOnTaskId: string | null;
 }) {
+  const dependsOnTaskId = await normalizeDependency(null, input.dependsOnTaskId, input.userId);
+
   await prisma.task.create({
     data: {
       ...input,
+      dependsOnTaskId,
       status: TaskStatus.SCHEDULED
     }
   });
@@ -287,6 +311,22 @@ export async function ensureCategoryRecord(userId: string, rawName: string) {
   });
 }
 
+async function normalizeDependency(taskId: string | null, dependsOnTaskId: string | null, userId: string) {
+  if (!dependsOnTaskId || dependsOnTaskId === taskId) {
+    return null;
+  }
+
+  const dependency = await prisma.task.findFirst({
+    where: {
+      id: dependsOnTaskId,
+      userId,
+      archivedAt: null
+    }
+  });
+
+  return dependency?.id ?? null;
+}
+
 export async function updateTaskRecord(
   taskId: string,
   input: {
@@ -296,11 +336,20 @@ export async function updateTaskRecord(
     dueDate: Date;
     dueTime: string | null;
     estimatedMinutes: number;
+    dependsOnTaskId: string | null;
   }
 ) {
+  const existingTask = await prisma.task.findUniqueOrThrow({
+    where: { id: taskId }
+  });
+  const dependsOnTaskId = await normalizeDependency(taskId, input.dependsOnTaskId, existingTask.userId);
+
   const task = await prisma.task.update({
     where: { id: taskId },
-    data: input
+    data: {
+      ...input,
+      dependsOnTaskId
+    }
   });
 
   return runReschedule(task.userId, ScheduleTriggerType.TASK_UPDATED);
@@ -312,6 +361,16 @@ export async function archiveTaskRecord(taskId: string) {
     data: {
       archivedAt: new Date(),
       status: TaskStatus.ARCHIVED
+    }
+  });
+
+  await prisma.task.updateMany({
+    where: {
+      dependsOnTaskId: taskId,
+      archivedAt: null
+    },
+    data: {
+      dependsOnTaskId: null
     }
   });
 
@@ -368,8 +427,7 @@ export async function markSessionDone(sessionId: string, actualMinutes?: number)
     });
   }
 
-  revalidatePath("/");
-  revalidatePath(`/tasks/${session.taskId}`);
+  revalidatePlannerPaths(session.taskId);
 }
 
 export async function createBlockedTimeRecord(input: {
@@ -461,6 +519,7 @@ export async function createContinuationTask(input: {
       estimatedMinutes: input.extraMinutes,
       status: TaskStatus.SCHEDULED,
       parentTaskId: sourceTask.id,
+      dependsOnTaskId: sourceTask.status === TaskStatus.DONE ? null : sourceTask.id,
       createdFromOverrun: true
     }
   });
@@ -480,5 +539,6 @@ export type TaskWithRelations = Prisma.TaskGetPayload<{
       };
     };
     parentTask: true;
+    dependsOnTask: true;
   };
 }>;

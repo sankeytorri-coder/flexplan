@@ -1,4 +1,4 @@
-# Scheduler MVP
+# FlexPlan
 
 This project is a planner-style scheduler app built with Next.js, Prisma, and TypeScript.
 
@@ -8,6 +8,11 @@ The key idea is simple:
 
 The app never asks the user to rank tasks by priority.
 
+The app now also supports:
+- private per-user accounts with login
+- a public welcome page
+- optional task dependencies for work that must wait on another task
+
 ## Quick Start
 
 1. Install dependencies:
@@ -16,21 +21,34 @@ The app never asks the user to rank tasks by priority.
    `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/scheduler"`
 3. Create the database tables:
    `npx prisma migrate dev --name init`
-4. Add demo data:
+4. Apply the database changes:
+   `npx prisma migrate dev --name auth-and-dependencies`
+5. Generate the Prisma client:
+   `npx prisma generate`
+6. Optional seed step:
    `npx prisma db seed`
-5. Start the app:
+7. Start the app:
    `npm run dev`
-6. Open:
+8. Open:
    `http://localhost:3000`
 
 ## Simple File Guide
 
 ### App pages
 
-- `app/page.tsx`
-  This is the main planner page. It shows settings, task entry, blocked time entry, the calendar board, and the task list.
+- `app/welcome/page.tsx`
+  This is the public home page. It explains how FlexPlan works and sends people to sign up or log in.
 
-- `app/tasks/[taskId]/page.tsx`
+- `app/login/page.tsx`
+  The login page for returning users.
+
+- `app/signup/page.tsx`
+  The account creation page for new users.
+
+- `app/planner/page.tsx`
+  This is the private planner page. It shows settings, task entry, blocked time entry, the calendar board, and the task list.
+
+- `app/planner/tasks/[taskId]/page.tsx`
   This is the task detail page. It shows one task, its sessions, continuation tasks, and the overrun form.
 
 - `app/actions.ts`
@@ -41,13 +59,16 @@ The app never asks the user to rank tasks by priority.
 - `components/dashboard-shell.tsx`
   The outer page layout and top header.
 
-- `components/forms.tsx`
-  The main form components for settings, task entry, blocked time, session completion, and overrun reporting.
+- `components/planner-forms.tsx`
+  The main form components for settings, task entry, blocked time, auth, session completion, and overrun reporting.
 
 - `components/calendar-board.tsx`
   The weekly planner-style calendar view.
 
 ### Scheduling logic
+
+- `lib/auth.ts`
+  Handles account creation, password hashing, login sessions, cookie auth, and current-user lookups.
 
 - `lib/scheduler.ts`
   This is the main scheduling engine. It decides where sessions go on the calendar.
@@ -64,10 +85,10 @@ The app never asks the user to rank tasks by priority.
 ### Database
 
 - `prisma/schema.prisma`
-  The Prisma database schema for users, categories, tasks, sessions, blocked time, and schedule runs.
+  The Prisma database schema for users, auth sessions, categories, tasks, dependencies, scheduled sessions, blocked time, and schedule runs.
 
 - `prisma/seed.ts`
-  Demo data used to populate the app after setup.
+  Optional seed step. It no longer creates a shared demo planner.
 
 ### Tests
 
@@ -87,9 +108,10 @@ Here is the simple version of the scheduler:
    existing planned work,
    completed historical sessions,
    blocked time like meetings or appointments.
-7. If needed, it splits one task into multiple work sessions.
-8. If all required time fits, the task is marked as scheduled.
-9. If some time does not fit before the deadline, the task is still placed as best as possible and marked `at risk`.
+7. If a task depends on another unfinished task, it is marked `waiting` and is not scheduled yet.
+8. If needed, it splits one task into multiple work sessions.
+9. If all required time fits, the task is marked as scheduled.
+10. If some time does not fit before the deadline, the task is still placed as best as possible and marked `at risk`.
 
 ## How Rescheduling Works
 
@@ -105,7 +127,7 @@ When rescheduling happens:
 1. old planned sessions are cleared
 2. completed sessions stay in history
 3. the scheduler recalculates future planned sessions
-4. task statuses are updated to `scheduled` or `at risk`
+4. task statuses are updated to `scheduled`, `waiting`, or `at risk`
 
 ## How Overruns Work
 
@@ -126,6 +148,14 @@ The UI is styled to feel like a digital daily planner:
 - rounded task cards like stickers
 - category-based color accents
 - clean layout with a planner-page feeling instead of a corporate dashboard
+
+## Login Flow
+
+1. Visitors land on the public welcome page.
+2. New users create an account from `/signup`.
+3. Returning users log in from `/login`.
+4. After login, each person is taken to `/planner`.
+5. All tasks, categories, blocked time, and sessions are stored per user so one person cannot overwrite another person&apos;s planner.
 
 ## Important Notes
 
