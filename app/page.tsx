@@ -189,7 +189,7 @@ export default async function Page() {
               </div>
             </div>
 
-            <CalendarBoard anchorDate={fallbackAnchorDate} items={calendarItems} />
+            <CalendarBoard anchorDate={fallbackAnchorDate} items={calendarItems} timezone={dashboard.timezone} />
 
             {unscheduledTasks.length ? (
               <div className="panel rose-wash space-y-4">
