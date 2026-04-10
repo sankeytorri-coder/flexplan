@@ -86,7 +86,15 @@ export function CalendarBoard({
 
           {days.map((day) => {
             const dayKey = getDateKeyInTimezone(day, timezone);
-            const dayItems = items.filter((item) => getDateKeyInTimezone(item.startAt, timezone) === dayKey);
+            const dayItems = items
+              .filter((item) => getDateKeyInTimezone(item.startAt, timezone) === dayKey)
+              .sort((left, right) => {
+                if (left.kind !== right.kind) {
+                  return left.kind === "blocked" ? -1 : 1;
+                }
+
+                return left.startAt.getTime() - right.startAt.getTime();
+              });
 
             return (
               <div className="calendar-day-column" key={day.toISOString()} style={{ height: timelineHeight }}>
@@ -106,7 +114,9 @@ export function CalendarBoard({
                       top: getTopPosition(item.startAt, timezone),
                       height: getEventHeight(item.startAt, item.endAt),
                       backgroundColor: `${item.color}26`,
-                      color: item.color
+                      color: item.color,
+                      border: `1px solid ${item.color}55`,
+                      zIndex: item.kind === "task" ? 2 : 1
                     }}
                   >
                     <p className="font-semibold">{item.title}</p>
