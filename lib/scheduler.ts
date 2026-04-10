@@ -155,8 +155,9 @@ export function buildSchedule({
   const activeTasks = tasks
     .filter((task) => task.status !== "DONE" && task.status !== "ARCHIVED")
     .sort((left, right) => {
-      const leftDeadline = getDeadline(left.dueDate, left.dueTime);
-      const rightDeadline = getDeadline(right.dueDate, right.dueTime);
+      const leftDeadline = getDeadline(left.dueDate, left.dueTime, settings.timezone);
+	const rightDeadline = getDeadline(right.dueDate, right.dueTime, settings.timezone);
+      
 
       if (leftDeadline.getTime() !== rightDeadline.getTime()) {
         return leftDeadline.getTime() - rightDeadline.getTime();
