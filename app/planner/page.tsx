@@ -210,7 +210,7 @@ export default async function PlannerPage() {
               </div>
             </div>
 
-            <CalendarBoard anchorDate={fallbackAnchorDate} items={calendarItems} />
+            <CalendarBoard anchorDate={fallbackAnchorDate} items={calendarItems} timezone={dashboard.timezone} />
 
             {waitingTasks.length ? (
               <div className="panel sage-wash space-y-4">

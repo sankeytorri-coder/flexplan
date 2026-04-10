@@ -148,7 +148,7 @@ export function getZonedNow(timezone: string, source = new Date()) {
   );
 }
 
-function getZonedParts(date: Date, timezone: string) {
+export function getZonedParts(date: Date, timezone: string) {
   const safeTimezone = normalizeTimezone(timezone);
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: safeTimezone,
@@ -172,6 +172,36 @@ function getZonedParts(date: Date, timezone: string) {
     minute: getPart("minute"),
     second: getPart("second")
   };
+}
+
+export function getDateKeyInTimezone(date: Date, timezone: string) {
+  const parts = getZonedParts(date, timezone);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+export function getClockMinutesInTimezone(date: Date, timezone: string) {
+  const parts = getZonedParts(date, timezone);
+  return parts.hour * 60 + parts.minute;
+}
+
+export function formatTimeInTimezone(date: Date, timezone: string) {
+  const safeTimezone = normalizeTimezone(timezone);
+
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: safeTimezone,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).format(date);
+}
+
+export function formatDateLabelInTimezone(date: Date, timezone: string, options: Intl.DateTimeFormatOptions) {
+  const safeTimezone = normalizeTimezone(timezone);
+
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: safeTimezone,
+    ...options
+  }).format(date);
 }
 
 export function zonedDateTimeStringToUtc(value: string, timezone: string) {

@@ -1,4 +1,10 @@
-import { addDays, eachDayOfInterval, endOfWeek, format, isSameDay, startOfWeek } from "date-fns";
+import { addDays, eachDayOfInterval, endOfWeek, format, startOfWeek } from "date-fns";
+import {
+  formatDateLabelInTimezone,
+  formatTimeInTimezone,
+  getClockMinutesInTimezone,
+  getDateKeyInTimezone
+} from "@/lib/time";
 
 type CalendarItem = {
   id: string;
@@ -13,10 +19,9 @@ type CalendarItem = {
 const hours = Array.from({ length: 12 }, (_, index) => index + 8);
 const HOUR_HEIGHT = 88;
 
-function getTopPosition(date: Date) {
-  const hourOffset = date.getHours() - hours[0];
-  const minuteOffset = date.getMinutes() / 60;
-  return (hourOffset + minuteOffset) * HOUR_HEIGHT;
+function getTopPosition(date: Date, timezone: string) {
+  const totalMinutes = getClockMinutesInTimezone(date, timezone);
+  return ((totalMinutes - hours[0] * 60) / 60) * HOUR_HEIGHT;
 }
 
 function getEventHeight(startAt: Date, endAt: Date) {
@@ -24,7 +29,15 @@ function getEventHeight(startAt: Date, endAt: Date) {
   return Math.max((minutes / 60) * HOUR_HEIGHT, 52);
 }
 
-export function CalendarBoard({ items, anchorDate = new Date() }: { items: CalendarItem[]; anchorDate?: Date }) {
+export function CalendarBoard({
+  items,
+  anchorDate = new Date(),
+  timezone
+}: {
+  items: CalendarItem[];
+  anchorDate?: Date;
+  timezone: string;
+}) {
   const start = startOfWeek(anchorDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({
     start,
@@ -46,8 +59,12 @@ export function CalendarBoard({ items, anchorDate = new Date() }: { items: Calen
           <div className="calendar-time-head">Time</div>
           {days.map((day) => (
             <div className="calendar-day-head" key={day.toISOString()}>
-              <p className="text-xs uppercase tracking-[0.15em] text-ink/50">{format(day, "EEE")}</p>
-              <p className="mt-1 font-semibold">{format(day, "MMM d")}</p>
+              <p className="text-xs uppercase tracking-[0.15em] text-ink/50">
+                {formatDateLabelInTimezone(day, timezone, { weekday: "short" })}
+              </p>
+              <p className="mt-1 font-semibold">
+                {formatDateLabelInTimezone(day, timezone, { month: "short", day: "numeric" })}
+              </p>
             </div>
           ))}
         </div>
@@ -62,7 +79,8 @@ export function CalendarBoard({ items, anchorDate = new Date() }: { items: Calen
           </div>
 
           {days.map((day) => {
-            const dayItems = items.filter((item) => isSameDay(item.startAt, day));
+            const dayKey = getDateKeyInTimezone(day, timezone);
+            const dayItems = items.filter((item) => getDateKeyInTimezone(item.startAt, timezone) === dayKey);
 
             return (
               <div className="calendar-day-column" key={day.toISOString()} style={{ height: timelineHeight }}>
@@ -79,7 +97,7 @@ export function CalendarBoard({ items, anchorDate = new Date() }: { items: Calen
                     className="calendar-event-card"
                     key={item.id}
                     style={{
-                      top: getTopPosition(item.startAt),
+                      top: getTopPosition(item.startAt, timezone),
                       height: getEventHeight(item.startAt, item.endAt),
                       backgroundColor: `${item.color}26`,
                       color: item.color
@@ -87,7 +105,7 @@ export function CalendarBoard({ items, anchorDate = new Date() }: { items: Calen
                   >
                     <p className="font-semibold">{item.title}</p>
                     <p className="mt-1">
-                      {format(item.startAt, "h:mm a")} - {format(item.endAt, "h:mm a")}
+                      {formatTimeInTimezone(item.startAt, timezone)} - {formatTimeInTimezone(item.endAt, timezone)}
                     </p>
                     {item.meta ? <p className="mt-1 opacity-80">{item.meta}</p> : null}
                   </div>
