@@ -1,4 +1,4 @@
-import { addMinutes, differenceInMinutes, isBefore, min } from "date-fns";
+import { addMinutes, differenceInMinutes, isAfter, isBefore, min } from "date-fns";
 import { getDeadline, listCandidateDays, roundUpToIncrement, setDayTime } from "@/lib/time";
 import {
   ExistingSession,
